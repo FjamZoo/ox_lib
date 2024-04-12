@@ -1,9 +1,7 @@
 import { Box, createStyles } from '@mantine/core';
 import { useEffect, useState } from 'react';
-import { IconProp } from '@fortawesome/fontawesome-svg-core';
 import { useNuiEvent } from '../../../hooks/useNuiEvent';
 import { fetchNui } from '../../../utils/fetchNui';
-import { isIconUrl } from '../../../utils/isIconUrl';
 import ScaleFade from '../../../transitions/ScaleFade';
 import type { RadialMenuItem } from '../../../typings';
 import { useLocales } from '../../../providers/LocaleProvider';
@@ -17,26 +15,29 @@ const useStyles = createStyles((theme) => ({
     transform: 'translate(-50%, -50%)',
   },
   sector: {
-    fill: theme.colors.dark[6],
-    color: theme.colors.dark[0],
+    fill: 'rgba(0,19,42,0.6)',
+    color: 'white',
 
     '&:hover': {
-      fill: theme.fn.primaryColor(),
+       fill: 'rgba(255,255,255,0.3)',
+       transition: 'fill 0.5s ease',
       '> g > text, > g > svg > path': {
         fill: '#fff',
+        color: 'white',
       },
     },
     '> g > text': {
-      fill: theme.colors.dark[0],
+      fill: '#fff',
+      color: 'white',
     },
   },
   backgroundCircle: {
     fill: theme.colors.dark[6],
   },
   centerCircle: {
-    fill: theme.fn.primaryColor(),
+    fill: 'rgba(0,123,255,1)',
     color: '#fff',
-    stroke: theme.colors.dark[6],
+    stroke: 'rgba(255,255,255,0.65)',
     strokeWidth: 4,
     '&:hover': {
       fill: theme.colors[theme.primaryColor][theme.fn.primaryShade() - 1],
@@ -111,6 +112,20 @@ const RadialMenu: React.FC = () => {
 
   return (
     <>
+    {visible && (
+        <div
+          className="overlay"
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            background: 'radial-gradient(circle, rgba(19,19,19,0.2539216370141807) 0%, rgba(19,19,19,0.6544818611038166) 50%)',
+            zIndex: 0,
+          }}
+        />
+      )}
       <Box
         className={classes.wrapper}
         onContextMenu={async () => {
@@ -121,9 +136,7 @@ const RadialMenu: React.FC = () => {
         <ScaleFade visible={visible}>
           <svg width="350px" height="350px" transform="rotate(90)">
             {/*Fixed issues with background circle extending the circle when there's less than 3 items*/}
-            <g transform="translate(175, 175)">
-              <circle r={175} className={classes.backgroundCircle} />
-            </g>
+           
             {menuItems.map((item, index) => {
               // Always draw full circle to avoid elipse circles with 2 or less items
               const pieAngle = 360 / (menuItems.length < 3 ? 3 : menuItems.length);
@@ -134,9 +147,6 @@ const RadialMenu: React.FC = () => {
               const cosAngle = Math.cos(angle);
               const iconX = 175 + sinAngle * radius;
               const iconY = 175 + cosAngle * radius;
-              const iconWidth = Math.min(Math.max(item.iconWidth || 50, 0), 100);
-              const iconHeight = Math.min(Math.max(item.iconHeight || 50, 0), 100);
-              
 
               return (
                 <>
@@ -158,17 +168,7 @@ const RadialMenu: React.FC = () => {
                       }, ${175 + (175 - gap) * Math.sin(-degToRad(pieAngle))} z`}
                     />
                     <g transform={`rotate(${index * pieAngle - 90} ${iconX} ${iconY})`} pointerEvents="none">
-                      {typeof item.icon === 'string' && isIconUrl(item.icon) ? (
-                        <image
-                          href={item.icon}
-                          width={iconWidth}
-                          height={iconHeight}
-                          x={iconX - iconWidth / 2}
-                          y={iconY - iconHeight / 2 - iconHeight / 4}
-                        />
-                      ) : (
-                        <LibIcon x={iconX - 12.5} y={iconY - 17.5} icon={item.icon as IconProp} width={25} height={25} fixedWidth/>
-                      )}
+                      <LibIcon x={iconX - 12.5} y={iconY - 17.5} icon={item.icon} width={25} height={25} fixedWidth />
                       <text
                         x={iconX}
                         y={iconY + (item.label.includes('  \n') ? 7 : 25)}
@@ -189,21 +189,25 @@ const RadialMenu: React.FC = () => {
                 </>
               );
             })}
-            <g
-              transform={`translate(175, 175)`}
-              onClick={async () => {
-                if (menu.page > 1) await changePage();
-                else {
-                  if (menu.sub) fetchNui('radialBack');
-                  else {
-                    setVisible(false);
-                    fetchNui('radialClose');
-                  }
-                }
-              }}
-            >
-              <circle r={32} className={classes.centerCircle} />
-            </g>
+<g
+  transform={`translate(175, 175)`}
+  onClick={async () => {
+    if (menu.page > 1) await changePage();
+    else {
+      if (menu.sub) fetchNui('radialBack');
+      else {
+        setVisible(false);
+        fetchNui('radialClose');
+      }
+    }
+  }}
+>
+  <path
+    d="M32,0 L64,16 L64,48 L32,64 L0,48 L0,16 Z"
+    className={classes.centerCircle}
+    transform="translate(-32, -32)" // Adjust the translation to center the hexagon
+  />
+</g>
           </svg>
           <div className={classes.centerIconContainer}>
             <LibIcon
@@ -215,6 +219,7 @@ const RadialMenu: React.FC = () => {
             />
           </div>
         </ScaleFade>
+         {/* Rest of your component */}
       </Box>
     </>
   );
